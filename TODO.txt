@@ -1,0 +1,18 @@
+
+Set up schduling system:
+    Once member display information is done we need to set up scheduling. 
+    This means the trainer implementation needs to be half done, need all scheduling related 
+    functionality to be finished. 
+
+    One major change: 
+        Rooms - Rooms will be involved in all scheduling of sessions or group fitness class 
+        rooms must be available, and thus will need to be assigned to specific class/events/sessions 
+
+
+
+
+
+Admin staff:
+    Need to set up rooms:
+        Rooms will be involved the event management and thus they will need to be assigned 
+        events? 

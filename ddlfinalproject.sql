@@ -13,22 +13,26 @@ create table member
      fName           varchar(255) ,
      lName          varchar(255),
      email          varchar(255) ,
-     height         integer ,
-     weight         integer ,
-     age            integer , 
-     weightGoal     integer,
-     lapTime        integer,
-     averageHeartRate   numeric, 
-     bloodOxygen        numeric, 
+     height         integer CHECK (height > 0),
+     weight         integer CHECK (weight > 0),
+     age            integer CHECK (age > 0), 
+     weightGoal     integer CHECK (weightGoal > 0),
+     lapTime        numeric CHECK (lapTime > 0),
+     swimTime       numeric CHECK (swimTime > 0),
+     benchMax       numeric CHECK (benchMax > 0),
+     squatMax       numeric CHECK (squatMax > 0),
+     deadliftMax    numeric CHECK (deadliftMax > 0),
+     restingHeartRate   numeric CHECK (restingHeartRate > 0), 
+     bmi            numeric CHECK (bmi > 0),
      primary key (memberID)
     );
 	
 create table session
     (SID        integer UNIQUE not null,
      trainerID  integer not null,
-     day        integer, 
-     timeStart  time,
-     timeEnd    time, 
+     day        integer CHECK (day > 0 and day < 32), 
+     timeStart  time CHECK (timeStart > '00:00:00' and timeStart < '24:00:00'),
+     timeEnd    time CHECK (timeEnd > '00:00:00' and timeEnd < '24:00:00'), 
      memberID   integer,
      primary key (SID, trainerID),
      foreign key (trainerID) references trainer (trainerID)
@@ -72,8 +76,8 @@ create table exerciseRoutine
 create table class 
     (CID        integer UNIQUE not null,
      day        date,
-     timeStart  time,
-     timeEnd    time, 
+     timeStart  time CHECK (timeStart > '00:00:00' and timeStart < '24:00:00'),
+     timeEnd    time CHECK (timeEnd > '00:00:00' and timeEnd < '24:00:00'), 
      classExercise  varchar(255),
      primary key (CID),
      foreign key (classExercise) references exerciseRoutine (name)
