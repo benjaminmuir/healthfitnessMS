@@ -1,18 +1,42 @@
 
-Set up schduling system:
-    Once member display information is done we need to set up scheduling. 
-    This means the trainer implementation needs to be half done, need all scheduling related 
-    functionality to be finished. 
+ORDER OF DOING THINGS AS OF 4/11/24:
 
-    One major change: 
-        Rooms - Rooms will be involved in all scheduling of sessions or group fitness class 
-        rooms must be available, and thus will need to be assigned to specific class/events/sessions 
+    NEED TO DO ADMIN MENU SO THAT WE CAN CREATE ROOMS, SESSIONS, CLASSES
+
+    FOR CLASSES: ADMIN CREATES AND ASSIGNS TRAINER -> MEMBERS REGISTER (USING memberClasses junction table)
+
+    FOR ROOMS: ADMINS CREATE -> ADMIN ASSIGN EVENT TO ROOM + DATA OF ROOM 
+
+    FOR SESSION: MEMBERS CREATES -> MEMBERS REGISTER (ONE TO ONE) I.E MEMBER UNIQUE AND TRAINER UNIQUE -> QUERY AND CHECK IF TRAINER CAN
+        ROOMS NOT UNIQUE BECAUSE WE CAN HAVE MULTIPLE THINGS IN ONE ROOM 
+    FLOW OF SESSIONS:
+        USERS GOES TO SCHEDULE MENU -> CREATE SCHEDULE BUTTON -> SCHEDULE CREATION IS STARTED -> SID MADE (SERIAL) -> ASKS WHAT TRAINER ->
+        TRAINER IS PICKED -> TRAINER SCHEDULE IS PRINTED -> ASKS WHAT TIME AND DAY -> CHECKS FOR TIME AND DAY VS TRAINER SCHEDULE (CAN USE HELPFUL HINT AT BOTTOM) ->
+        IF NOT AVAILABLE -> ASK FOR DAY AND TIME AGAIN (ROLLBACK) -> OTHERWISE -> SCHEDULE THE SESSION
+
+    SCHEDULE CLASS:
+        WILL LOOK LIKE THIS: 
+            TRAINER ID:      DAY:
+            1               Monday
+            1               Wednesday
+            2               Thursday
+            2               Tuesday
+        I.E Trainers ID will be linked (FK) and they specify which day they can work 
+        He does not specify a time in the comment he made, so maybe don't need (they are avaiable all day)
+        *MAYBE MAKE SO ALL EVENTS CAN ONLY OCCUR BETWEEN CERTAIN TIMES* *OPEN AND CLOSED GYM*
+
+    HELPFUL HINT: 
+    SELECT COUNT(*)
+    FROM session
+    WHERE trainer_id = %s AND (
+        (time_start <= %s AND time_end > %s) OR
+        (time_start < %s AND time_end >= %s) OR
+        (time_start >= %s AND time_end <= %s)
+    )
+    HERE IS A QUERY THAT WILL BE RUN WHEN A SESSION IS MADE, CHECKING IF THERE ARE ANY SESSIONS OVERLAPPING WITH THE CURRENT ONE
 
 
-
-
-
-Admin staff:
-    Need to set up rooms:
-        Rooms will be involved the event management and thus they will need to be assigned 
-        events? 
+    DIFFERENT FLOW FOR HELP:
+        CLASS: CLASS MUST BE MADE FIRST (TRAINER + ROOM ASSIGNED) -> THEN MEMBER CAN JOIN 
+        SESSION: MEMBER MUST CREATE FIRST -> THEN MADE
+        ROOMS: ROOM MUST BE MADE FIRST -> THEN EVENT SCHEDULE IS DETERMINED -> THEN 
