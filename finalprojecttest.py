@@ -1,4 +1,5 @@
 import psycopg
+from datetime import datetime
 #connect to the database 
 db = psycopg.connect("dbname=finalProject2 host=localhost user=postgres password=jabulani")
 #create a cursor
@@ -6,7 +7,7 @@ cur = db.cursor()
 
 
 
-def userMenu():
+def memberMenu():
     mainMenuChoice = input("""
     ---------------------------------------------------------------------------------------------------
     (1) Profile Management (Updating personal info, goals, and health metrics)
@@ -19,6 +20,34 @@ def userMenu():
     ---------------------------------------------------------------------------------------------------\n""")
     
     
+    return mainMenuChoice
+
+def trainerMenu():
+    mainMenuChoice = input("""
+    ---------------------------------------------------------------------------------------------------
+    (1) Schedule Management
+                            
+    (2) Member Profile Search 
+
+    (3) Update Trainer Name
+                                                              
+    (4) Exit the System
+    ---------------------------------------------------------------------------------------------------\n""")
+    return mainMenuChoice
+
+def adminMenu():
+    mainMenuChoice = input("""
+    ---------------------------------------------------------------------------------------------------
+    (1) Room Booking Management
+                            
+    (2) Equipment Maintenance Management
+                            
+    (3) Class Schedule Management
+
+    (4) Billing and Payment Management                                              
+
+    (5) Exit the System
+    ---------------------------------------------------------------------------------------------------\n""")
     return mainMenuChoice
 
 def memberLogin():
@@ -52,6 +81,7 @@ def memberLogin():
         
         except:
             print("Either username or password is the same as an existing member.")
+            db.rollback()
             return usernameId, userPassWord, False
 
     #if the member has an account, simply fetch the relevant data
@@ -90,15 +120,16 @@ def trainerLogin():
     if existing in ["n", "N", "no", "NO"]: 
         usernameId = str(input("\nPlease sign in with your username:\n"))
         userPassWord = str(input("Password:\n"))
+        name = str(input("Enter a name as well for your members to call you by:\n"))
         #make new data in the trainer table and set id username and password for now
         try:
-            #set the data for username and password only
-            cur.execute("INSERT INTO trainer (username, password) VALUES (%s, %s)",
-                    (usernameId,userPassWord))
+            #set the data for username and password and name only
+            cur.execute("INSERT INTO trainer (username, password,name) VALUES (%s, %s,%s)",
+                    (usernameId,userPassWord,name))
             
             #get the trainerID of the new trainer
-            cur.execute("SELECT trainerID FROM trainer WHERE username = %s AND password = %s",
-                    (usernameId,userPassWord))
+            cur.execute("SELECT trainerID FROM trainer WHERE username = %s AND password = %s AND name = %s" ,
+                    (usernameId,userPassWord, name))
             trainerID = str(cur.fetchone()[0])
             print(f"\nNew trainer {usernameId} added!")
             db.commit()
@@ -113,7 +144,6 @@ def trainerLogin():
     if existing in ["y", "Y", "yes", "YES"]:
         usernameId = str(input("\nPlease sign in with your username:\n"))
         userPassWord = str(input("Password:\n"))
-        
         try: 
             cur.execute("SELECT trainerID FROM trainer WHERE username = %s AND password = %s",
                     (usernameId,userPassWord)) 
@@ -153,10 +183,10 @@ def updateWeightGoal(memberID):
             break
         except ValueError:
             print("Invalid input, please enter a number (can include decimals).\n")
-            db.rollback()
+           
         except psycopg.IntegrityError as e:
             print("Invalid input, please enter a number above 0\n")
-            db.rollback()
+            
        
 
 def updateLapTimeGoal(memberID):
@@ -176,10 +206,10 @@ def updateLapTimeGoal(memberID):
         #makes sure to rollback the previous execute on error
         except ValueError:
             print("Invalid input, please enter a number.\n")
-            db.rollback()
+            
         except psycopg.IntegrityError as e:
             print("Invalid input, please enter a number above 0\n")
-            db.rollback()
+            
         
 
 def updateBenchMaxGoal(memberID):
@@ -198,10 +228,10 @@ def updateBenchMaxGoal(memberID):
         #makes sure to rollback the previous execute on error
         except ValueError:
             print("Invalid input, please enter a number.\n")
-            db.rollback()
+            
         except psycopg.IntegrityError as e:
             print("Invalid input, please enter a number above 0\n")
-            db.rollback()
+            
         
 
 def updateSquatGoal(memberID):
@@ -220,10 +250,10 @@ def updateSquatGoal(memberID):
         #makes sure to rollback the previous execute on error
         except ValueError:
             print("Invalid input, please enter a number.\n")
-            db.rollback()
+            
         except psycopg.IntegrityError as e:
             print("Invalid input, please enter a number above 0\n")
-            db.rollback()
+            
 
 def updatePersonalInfo(memberID, cols):
     while True:
@@ -243,7 +273,7 @@ def updatePersonalInfo(memberID, cols):
     
             dataUpdate = input("Please enter the new data or type clear to erase current data:\n")
             for data in cols:
-                if int(columnUpdate) == cols.index(data):
+                if columnUpdate == cols.index(data):
                     #if data is int
                     if data == "age":
                         if dataUpdate in ["clear", "c", "Clear", "C"]:
@@ -271,27 +301,150 @@ def updatePersonalInfo(memberID, cols):
                             cur.execute(f"UPDATE member SET {data} = %s WHERE memberID = %s",(dataUpdate,memberID))
                             print(f"Updated {data} to {dataUpdate}")
                             db.commit()
+            db.commit()
             break
         #makes sure to rollback the previous execute on error
         except ValueError:
             print("Invalid input, please enter a number.")
-            db.rollback()
         except psycopg.IntegrityError as e:
             print("Invalid input, please enter a valid number")
-            db.rollback()
     
-"""
-Prints the profile menu for any member. 
-Has options:
-    Update Personal Info:
-        Will update age,fname,lname,email,height,weight 
-    Update Goals:
-        Used to update weightGoal, lapTime (and others)
-    Update Health Metrics:
-        Used to update bmi, averageHeartRate 
-Params: memberID
-    Takes current memberID of the member that is currently logged on. 
-"""
+def memberScheduleMenu(memberID):
+    print("Welcome to your schedule!")
+    while True:
+        choice = input("""\n
+    --------------------------------
+    Schedule Menu:
+    (1) Book a Session with a Trainer
+                       
+    (2) View Your Sessions
+                       
+    (3) Cancel a session 
+                       
+    (4) Join a Group Fitness Class
+                       
+    (5) View Your Group Fitness Classes
+                       
+    (6) Exit the menu
+    -------------------------------\n""")
+        return choice
+   
+def memberSchedule(memberID, choice):
+    while True:
+        if choice == "1":
+            try:
+                #first print out all the trainers so member knows
+                cur.execute("SELECT name FROM trainer")
+                allTrainers = cur.fetchall()
+                print("Here is the names of our current trainers:")
+                for i in allTrainers:
+                    print(i[0])
+
+                #get all the session data from member
+                trainerName = input("\nEnter the name of the trainer you would like to train with:\n")
+                cur.execute("SELECT trainerID FROM trainer WHERE name = %s", (trainerName,))
+                #get id from name given
+                trainerID = cur.fetchone()[0]
+
+                cur.execute("SELECT day,timeStart,timeEnd FROM schedule WHERE trainerID = %s", (trainerID,))
+                print(f"\nHere is the schedule for {trainerName}:")
+                for row in cur:
+                    print(f"{row[0]} from {row[1]} - {row[2]}")
+
+                day = input("\nEnter the day for the session (Day of Week, Capatalized):\n")
+                timeStart = input("Enter the start time for the session: HH:MM:SS (24-Hour):\n")
+                timeEnd = input("Enter the end time for the session: HH:MM:SS (24-Hour):\n")
+                #use trainerId and data to get availaiblity of trainer 
+                cur.execute("SELECT * from schedule WHERE trainerID = %s AND day = %s AND timeStart <= %s AND timeEnd >= %s", 
+                            (trainerID, day, timeStart, timeEnd))
+                #check if availability does not line up
+                if cur.fetchone() is None:
+                    print("\nThe trainer does not have availability at this time or day.\n")
+
+                else:
+                    #if there exists a session already that is the same time 
+                    cur.execute("SELECT * from session WHERE day = %s AND ((timeStart <= %s AND timeEnd > %s) OR (timeStart < %s AND timeEnd >= %s) OR (timeStart >= %s AND timeEnd <= %s))",
+                                (day, timeStart, timeEnd, timeStart, timeEnd, timeStart, timeEnd))
+                    if cur.fetchone() is not None:
+                        print("\nYou have a session that overlaps this one, please check your session list.\n")
+                        break
+                    else:
+                        cur.execute("SELECT * FROM session where memberID = %s", (memberID,))
+                        #set the time in hours for the entire session (for payment)
+                        totalTime = ((datetime.strptime(timeEnd,'%H:%M:%S') - datetime.strptime(timeStart,'%H:%M:%S')).total_seconds())/3600
+                        bill = 65 * totalTime
+                        print(f"The bill for this session is: ${bill}")
+                        billChoice = input("\nWould you like to pay now (1) or in person (2)?\n")
+
+                        if billChoice == "1":
+                            #make new bill that is paid for admin to keep track of 
+                            cur.execute("INSERT INTO payment (amount, memberID, paid) VALUES (%s, %s, %s)", (bill,memberID,True))
+                            db.commit()
+                            print("Decision received! Your bill has been paid!")
+
+                        elif billChoice == "2":
+                            #make new bill that is not paid
+                            cur.execute("INSERT INTO payment (amount, memberID, paid) VALUES (%s, %s, %s)", (bill,memberID,False))
+                            db.commit()
+                            print("Bill has been set to unpaid for now, please see admins in person to pay the bill.")
+
+                        cur.execute("INSERT INTO session (trainerID, memberID, day, timeStart, timeEnd) VALUES (%s, %s, %s, %s, %s)",
+                                    (trainerID, memberID, day, timeStart, timeEnd))
+                        db.commit()
+
+                        print(f"\nSession was booked with {trainerName} on {day} at {datetime.strptime(timeStart,'%H:%M:%S').time()}!\n")
+
+                        break
+            except TypeError:
+                print("Please ensure the input is of valid type")
+                db.rollback()
+            except psycopg.IntegrityError:
+                print("\nPlease ensure that the time is formatted correctly, and that the name is of an existing trainer.\n")
+                db.rollback()
+
+        elif choice == "2":
+            cur.execute("SELECT * FROM session WHERE memberID = %s", (memberID,))
+            print("\nYour current sessions are:")
+            for row in cur:
+                print(f"Session ID: {row[0]}, Day: {row[3]}, StartTime: {row[4]}, End Time: {row[5]}")
+            break
+
+        elif choice == "3":
+            cur.execute("SELECT * FROM session WHERE memberID = %s", (memberID,))
+            print("\nYour current sessions are:")
+            for row in cur:
+                print(f"Session ID: {row[0]}, Day: {row[3]}, StartTime: {row[4]}, End Time: {row[5]}")
+            sID = input("\nEnter the session ID that you want to cancel:\n")
+            cur.execute("DELETE FROM session WHERE SID = %s AND memberID = %s", (sID, memberID))
+            db.commit()
+            print(f"\nThe session has been cancelled. The trainer has been notified.\n")
+            break
+
+        elif choice == "4":
+            cur.execute("SELECT CID, classExercise, day, timeStart, timeEnd from class")
+            allClasses = cur.fetchall()
+            print("\nHere are all the classes:")
+            for c in allClasses:
+                print(f"Class ID: {c[0]}, Exercise: {c[1]}, Day: {c[2]}, StartTime: {c[3]}, End Time: {c[4]}")
+            cID = input("\nEnter the ID of the class you would like to join")
+            cur.execute("INSERT INTO memberClass (CID, memberID) VALUES (%s, %s)", (cID, memberID))
+            db.commit()
+            print("\nYou have joined the class!\n")
+            break
+
+        elif choice == "5":
+            cur.execute("SELECT * from memberClass where memberID = %s", (memberID,))
+            print("\nThe classes you are currently registered for:\n")
+            for row in cur: 
+                print(row)
+            break
+
+        elif choice == "6":
+            print("\nExiting the menu...")
+            break
+
+        else:
+            print("\nPlease enter a valid choice.\n")
 def profileMenu(memberID):
     col_names = []
     data_rows = []
@@ -317,6 +470,7 @@ def profileMenu(memberID):
                     #storing the column names and corresponding data for printing 
                     col_names = ([desc[0] for desc in cur.description])
 
+                    data_rows = []
                     for row in cur:
                         data_rows.append(row)
 
@@ -329,9 +483,11 @@ def profileMenu(memberID):
                     updatePersonalInfo(memberID, col_names)
                     cc = input("Would you like to update anything else? (1) Yes or (2) No\n")
                     if(cc == "2"):
+                        db.commit()
                         break
                     else:
                         db.commit()
+                    
 
             case "2":
                 print("You have chosen to update your goals!\n")
@@ -362,17 +518,21 @@ def profileMenu(memberID):
                         db.commit()
                         break
                     except ValueError:
-                            print("\nInvalid input, please enter a number.")
-                            db.rollback()
+                        print("\nInvalid input, please enter a number.")
+                        db.rollback()
+                        
                     except psycopg.IntegrityError as e:
                         print("\nInvalid input, please enter a number between 39 and 111")
                         db.rollback()
+                        
             case "4":
                 #print profile info, goals, and health metrics in seperate sections all titled
                 print("Here is your profile information:\n")
                 cur.execute("SELECT fName,lName,email,height,weight,age,lapTime,benchMax,squatMax FROM member WHERE memberID = %s",(memberID,))
+                
                 col_names = ([desc[0] for desc in cur.description])
 
+                data_rows = []
                 for row in cur:
                     data_rows.append(row)
 
@@ -381,24 +541,29 @@ def profileMenu(memberID):
 
                 print("\nHere are your fitness goals:\n")
                 cur.execute("SELECT weightGoal,lapTimeGoal,squatMaxGoal,benchMaxGoal FROM member WHERE memberID = %s",(memberID,))
+                
                 col_names = ([desc[0] for desc in cur.description])
 
+                data_rows = [] #make sure to clear data before append new data
                 for row in cur:
                     data_rows.append(row)
-
+                
+                
                 for data in col_names:
-                    print(f"{data}: {data_rows[1][col_names.index(data)]}")
+                    print(f"{data}: {data_rows[0][col_names.index(data)]}")
 
                 print("\nHere are your health metrics:\n")
                 cur.execute("SELECT bmi,restingHeartRate FROM member WHERE memberID = %s",(memberID,))
+                
                 col_names = ([desc[0] for desc in cur.description])
-
+                
+                data_rows = []
                 for row in cur:
                     data_rows.append(row)
 
                 for data in col_names:
-                    print(f"{data}: {data_rows[2][col_names.index(data)]}")
-                db.commit()
+                    print(f"{data}: {data_rows[0][col_names.index(data)]}")
+                
             case "5":
                 print("Exiting the profile menu")
                 break
@@ -501,8 +666,128 @@ def dashBoardDisplay(memberID):
                 break
             case _:
                 print("Please enter a number from 1 to 5.")
-def scheduleMenu():
-    return
+
+def trainerName(trainerID):
+    while True:
+        try:
+            name = input("Please enter your name you would like the members to call you:\n")
+            cur.execute("UPDATE trainer set name = %s WHERE trainerID = %s", (name,trainerID))
+            db.commit()
+            break
+        except ValueError:
+            print("Please enter a valid input.")
+            db.rollback()
+
+def scheduleMenu(trainerID):
+    print("Welcome to your schedule management!")
+    while True:
+        choice = input("""
+    --------------------------------
+    (1) Create New Availability
+                       
+    (2) Update Existing Availability
+                       
+    (3) See your current available Days
+                       
+    (4) Exit Dashboard
+    -------------------------------\n""")
+        try:
+            if choice == "1":
+                while True: #to enable multiple creations in a row 
+                    dayWhen = str(input("Please select a day that you are available (Must be Capatalized):\n"))
+                    #check if the day already exists for this trainer
+                    cur.execute("SELECT * FROM schedule WHERE trainerID = %s AND day = %s", (trainerID,dayWhen))
+                    if cur.fetchone() is not None:
+                        print("\nAvailability has already been made for that day, please update the existing availability.")
+                        break
+                    else:
+                        timeStart = input("Please input a time to start on that day in the format hh:mm:ss (24-hour clock):\n")
+                        timeEnd = input("Please input a time to end on that day in the format hh:mm::ss (24-hour clock)\n")
+                        startObject = datetime.strptime(timeStart, '%H:%M:%S')
+                        endObject = datetime.strptime(timeEnd, '%H:%M:%S')
+                        # cur.execute("INSERT INTO exerciseRoutine (name, repetitions, memberID) VALUES (%s, %s, %s)",
+                            # (exercise_name, repetitions, memberID))
+                        cur.execute("INSERT INTO schedule (trainerID,day,timeStart,timeEnd) VALUES (%s,%s,%s,%s)",
+                                    (trainerID, dayWhen,startObject.time(),endObject.time()))
+                        print("\nAvailability has been made!\n")
+                        con = input("\nWould you like to make more availability? Yes (1) or No (2)\n")
+                        if con == "2":
+                            db.commit()
+                            break
+                        else:
+                            db.commit()
+            elif choice == "2":
+                while True:
+                    # Update Existing Availability
+                    dayWhen = str(input("Please select a day that you want to update (Must be Capitalized):\n"))
+                    cur.execute("SELECT * FROM schedule WHERE trainerID = %s AND day = %s", (trainerID,dayWhen))
+                    #check if exists first
+                    if cur.fetchone() is None:
+                        print("\nYou have not yet created that day yet, please create it first.")
+                        break
+                    timeStart = input("Please input a new start time for that day in the format hh:mm:ss (24-hour clock):\n")
+                    timeEnd = input("Please input a new end time for that day in the format hh:mm::ss (24-hour clock)\n")
+                    startObject = datetime.strptime(timeStart, '%H:%M:%S')
+                    endObject = datetime.strptime(timeEnd, '%H:%M:%S')
+                    cur.execute("UPDATE schedule SET timeStart = %s, timeEnd = %s WHERE trainerID = %s AND day = %s",
+                                (startObject.time(), endObject.time(), trainerID, dayWhen))
+                    print("Availability has been updated!")
+                    db.commit()
+                    con = input("Would you like to update any others? (1) Yes or (2) No\n")
+                    if con == "2":
+                        db.commit()
+                        break
+                    else:
+                        db.commit()
+            elif choice == "3":
+                # See your current available Days
+                cur.execute("SELECT day, timeStart, timeEnd FROM schedule WHERE trainerID = %s ORDER BY day",(trainerID,))
+                print("\nYour current available days are:\n")
+                for row in cur:
+                    print(f"Day: {row[0]}, Start Time: {row[1]}, End Time: {row[2]}")
+            elif choice == "4":
+                print("\nExiting Dashboard...")
+                break
+            else:
+                print("Invalid choice. Please enter a number between 1 and 4.")
+        except ValueError:
+            print("Please enter in the proper format.")
+            db.rollback()
+        
+        
+
+def viewMember():
+    #vars for storing data
+    col_names = []
+    data_rows = []
+    print("Welcome to the member search!\n")
+    while True:
+        #get names of member for searching
+        memberFirstName = input("Please enter the first name of the member:\n")
+        memberLastName = input("Please enter the last name of the member:\n")
+        cur.execute("SELECT * FROM member WHERE fName = %s AND lName = %s", 
+                    (memberFirstName,memberLastName))
+        #check if member exists first
+        data_rows = [] #make sure to clear data before append new data
+        for row in cur:
+            data_rows.append(row)
+        if len(data_rows) == 0:
+            print("\nThere does not exists a member with those names")
+            break
+        else:
+            #get the names
+            print(f"\nHere is the member data for {memberFirstName} {memberLastName}:\n")
+            col_names = ([desc[0] for desc in cur.description])
+            # get data and print
+            for data in col_names:
+                print(f"{data}: {data_rows[0][col_names.index(data)]}")
+
+        #ask for continuation
+        choice = input("\nWould you like to look up another member? (1) Yes or (2) No\n")
+        if choice == "2":
+            break
+        else:
+            pass
 
 def main():
     logInType = userLogin()
@@ -511,20 +796,51 @@ def main():
             #login is a member
             if logInType == "1":
                 member = memberLogin()
+
                 if member[2] == False:
                     main()
+
                 currentMemberID = member[2]
+
+                while True:
+                    memberMenuChoice = memberMenu()
+                    #keep updating current member ID that is logged in
+                    if memberMenuChoice == "1":
+                        profileMenu(currentMemberID)
+                    elif memberMenuChoice == "2":
+                        dashBoardDisplay(currentMemberID)
+                    elif memberMenuChoice == "3":
+                        choice = memberScheduleMenu(currentMemberID)
+                        memberSchedule(currentMemberID,choice) 
+                    elif memberMenuChoice == "4":
+                        print("\nExiting....")
+                        db.commit()
+                        cur.close()
+                        db.close()
+                        quit()
+                    db.commit()
+    
+            #login is a trainer
+            elif logInType == "2":
+                trainer = trainerLogin()
+
+                #check if error occured on login
+                if trainer[2] == False:
+                    main()
+                
+                #store trainerID from return value
+                currentTrainerID = trainer[2]
+
                 while True:
                     try: 
-                        userMenuChoice = userMenu()
-                        #keep updating current member ID that is logged in
-                        if userMenuChoice == "1":
-                            profileMenu(currentMemberID)
-                        elif userMenuChoice == "2":
-                            dashBoardDisplay(currentMemberID)
-                        elif userMenuChoice == "3":
-                            scheduleMenu()
-                        elif userMenuChoice == "4":
+                        trainerMenuChoice = trainerMenu() 
+                        if trainerMenuChoice == "1":
+                            scheduleMenu(currentTrainerID)
+                        elif trainerMenuChoice == "2":
+                            viewMember()
+                        elif trainerMenuChoice == "3":
+                            trainerName(currentTrainerID)
+                        elif trainerMenuChoice == "4":
                             print("Exiting.")
                             db.commit()
                             cur.close()
@@ -533,14 +849,16 @@ def main():
                         db.commit()
                     except ValueError:
                         print("Please enter valid input.")
-            elif logInType == "2":
-                trainer = trainerLogin()
-                if trainer[2] == False:
-                    main()
-                currentTrainerID = trainer[2]
-                break
+            #login is an admin
+            elif logInType == "3":
+                print("You are an admin!")
+                quit()
+            elif logInType == "4":
+                print("Quitting the system...")
+                quit()
         except ValueError:
-            print("Please enter valid input.")
+            print("please enter right type")
+        break
 
     
 
