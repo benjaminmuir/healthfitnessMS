@@ -2,9 +2,10 @@ create table trainer
     (trainerID      serial UNIQUE not null, 
      username       varchar(255) UNIQUE not null, 
      password       varchar(255) UNIQUE not null,
-     name           varchar(255) not null,
+     name           varchar UNIQUE not null,
      primary key (trainerID)
     );
+
 	
 create table member 
     (memberID      serial UNIQUE not null, 
@@ -17,8 +18,8 @@ create table member
      weight         numeric CHECK (weight > 0),
      age            integer CHECK (age > 0), 
      weightGoal     numeric CHECK (weightGoal > 0),
-     lapTime        numeric CHECK (lapTime > 0),
-     lapTimeGoal        numeric CHECK (lapTimeGoal > 0),
+     lapTime        time CHECK (lapTime >= '00:00:00'),
+     lapTimeGoal        time CHECK (lapTimeGoal >= '00:00:00'),
      benchMax        numeric CHECK (benchMax > 0),
      benchMaxGoal       numeric CHECK (benchMaxGoal > 0),
      squatMax       numeric CHECK (squatMax > 0),
@@ -45,24 +46,34 @@ create table class
      timeEnd    time CHECK (timeEnd >= '00:00:00' and timeEnd <= '23:59:59' and timeEnd > timeStart ), 
      classExercise  varchar(255),
      memberID integer,
-     trainerID integer UNIQUE,
+     trainerID integer not null,
      primary key (CID),
      foreign key (memberID) references member (memberID)
         on delete cascade,
      foreign key (trainerID) references trainer (trainerID)
+        on delete cascade
     );
 
 create table room
     (roomID serial UNIQUE not null,
      eventName varchar(255),
+     day        varchar CHECK (day IN ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')),
      eventStart time CHECK (eventStart >= '00:00:00' and eventStart <= '23:59:59' and eventStart < eventEnd),
      eventEnd time CHECK (eventEnd >= '00:00:00' and eventEnd <= '23:59:59' and eventEnd > eventStart),
-     capacity integer CHECK (capacity > 0),
      CID integer,
      primary key (roomID),
      foreign key (CID) references class (CID)
         on delete set null
-    );    
+    );   
+
+create table equipment
+    (equipmentID serial UNIQUE not null,
+     name varchar not null, 
+     monitorStatus boolean not null,
+     nextMonitorDate integer,
+     primary key (equipmentID) 
+    );
+
 
 create table payment
     (billID serial UNIQUE not null,
@@ -85,7 +96,7 @@ create table session
      foreign key (trainerID) references trainer (trainerID)
         on delete cascade,
      foreign key (memberID) references member (memberID)
-        on delete cascade,
+        on delete cascade
     );	
 
 create table schedule 
@@ -96,34 +107,14 @@ create table schedule
      foreign key (trainerID) references trainer (trainerID)
         on delete cascade
     );    
-
-
-create table opens 
-    (SID        integer,
-     trainerID  integer,
-     primary key (SID, trainerID),
-     foreign key (SID) references session (SID)
-        on delete set null,
-     foreign key (trainerID) references trainer (trainerID)
-        on delete set null
-    );
-
-create table registers 
-    (SID        integer,
-     memberID  integer,
-     primary key (SID, memberID),
-     foreign key (SID) references session (SID)
-        on delete set null,
-     foreign key (memberID) references member (memberID)
-        on delete set null
-    );
     
 create table memberClass
     (CID        integer,
      memberID        integer,
      primary key (CID, memberID),
      foreign key (CID) references class (CID)
-        on delete set null,
+        on delete cascade,
      foreign key (memberID) references member (memberID)
+        on delete cascade
     );
     
