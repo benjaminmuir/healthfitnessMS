@@ -6,7 +6,6 @@ create table trainer
      primary key (trainerID)
     );
 
-	
 create table member 
     (memberID      serial UNIQUE not null, 
      username       varchar(255) UNIQUE not null, 
@@ -55,13 +54,13 @@ create table class
     );
 
 create table room
-    (roomID serial UNIQUE not null,
+    (roomNumber serial UNIQUE not null,
      eventName varchar(255),
      day        varchar CHECK (day IN ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')),
      eventStart time CHECK (eventStart >= '00:00:00' and eventStart <= '23:59:59' and eventStart < eventEnd),
      eventEnd time CHECK (eventEnd >= '00:00:00' and eventEnd <= '23:59:59' and eventEnd > eventStart),
      CID integer,
-     primary key (roomID),
+     primary key (roomNumber),
      foreign key (CID) references class (CID)
         on delete set null
     );   

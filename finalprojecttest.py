@@ -66,7 +66,7 @@ def adminMenu():
     
 def printAllRooms():
     cur.execute("""
-    SELECT room.roomID, room.eventName, room.day, room.eventStart, room.eventEnd, class.CID, class.day, class.timeStart, class.timeEnd, class.classExercise, trainer.name 
+    SELECT room.roomNumber, room.eventName, room.day, room.eventStart, room.eventEnd, class.CID, class.day, class.timeStart, class.timeEnd, class.classExercise, trainer.name 
     FROM room 
     LEFT JOIN class ON room.CID = class.CID
     LEFT JOIN trainer ON class.trainerID = trainer.trainerID
@@ -74,9 +74,9 @@ def printAllRooms():
     allRooms = cur.fetchall() 
     for row in allRooms:
         if row[5] is None:
-            print(f"Room ID: {row[0]}, Event Name: {row[1]}, Day: {row[2]}, Start Time: {row[3]}, End Time: {row[4]}")
+            print(f"Room Number: {row[0]}, Event Name: {row[1]}, Day: {row[2]}, Start Time: {row[3]}, End Time: {row[4]}")
         else:
-            print(f"Room ID: {row[0]}, Class ID: {row[5]}, Day: {row[6]}, Start Time: {row[7]}, End Time: {row[8]}, Class Exercise: {row[9]}, Trainer: {row[10]}")
+            print(f"Room Number: {row[0]}, Class ID: {row[5]}, Day: {row[6]}, Start Time: {row[7]}, End Time: {row[8]}, Class Exercise: {row[9]}, Trainer: {row[10]}")
 
 
 def roomBookingMenu():
@@ -138,8 +138,8 @@ def roomBookingMenu():
                     try:
                         printAllRooms()
                         # Update Existing room
-                        rId = str(input("\nPlease select a room that you want to update (Must be the Room ID):\n"))
-                        cur.execute("SELECT * FROM room WHERE roomID = %s", (rId,))
+                        roomNumber = str(input("\nPlease select a room that you want to update (Must be the Room Number):\n"))
+                        cur.execute("SELECT * FROM room WHERE roomNumber = %s", (roomNumber,))
                         #check if exists first
                         room = cur.fetchone()
                         if room is None:
@@ -147,7 +147,7 @@ def roomBookingMenu():
                             break
                         else:
                             #get CID from roomId 
-                            cur.execute("SELECT CID from room WHERE roomID = %s",(rId,))
+                            cur.execute("SELECT CID from room WHERE roomNumber = %s",(roomNumber,))
                             cid = cur.fetchone()
                             #if not None, then it is a room with CID (room with class -> room with event)
                             if cid is not None and cid[0] is not None:
@@ -156,8 +156,8 @@ def roomBookingMenu():
                                 day = input("Please enter a new day of the event:\n")
                                 eventStart = input("Please enter a new time that the event will start at:\n")
                                 eventEnd = input("Please enter a new time the event will end at:\n")
-                                cur.execute("UPDATE room SET eventName =%s, day =%s, eventStart=%s, eventEnd=%s, CID = %s WHERE roomID = %s", 
-                                            (eventName,day,eventStart,eventEnd,None, rId))
+                                cur.execute("UPDATE room SET eventName =%s, day =%s, eventStart=%s, eventEnd=%s, CID = %s WHERE roomNumber = %s", 
+                                            (eventName,day,eventStart,eventEnd,None, roomNumber))
                                 db.commit()
                             else:
                                 print("\nYou have decided to switch a room with a special event to a room with a class.\n")
@@ -169,8 +169,8 @@ def roomBookingMenu():
                                     print("\nThat class already exists in a room. Please choose another class or make a new one.\n")
                                     break
                                 else:
-                                    cur.execute("UPDATE room SET CID =%s WHERE roomID = %s", 
-                                                (cId,rId))
+                                    cur.execute("UPDATE room SET CID =%s WHERE roomNumber = %s", 
+                                                (cId,roomNumber))
                                     db.commit()
                                     print("\nRoom has been updated.\n")
                             con = input("\nWould you like to update anymore? Yes (1) or No (2):\n")
@@ -1071,7 +1071,7 @@ def memberSchedule(memberID, choice):
         except ValueError:
             print("Please enter a valid input.")
         except psycopg.errors.InvalidDatetimeFormat as e:
-            print("Please ensure the date/time formate is correct")
+            print("Please ensure the date/time format is correct")
             db.rollback()
         except psycopg.errors.InvalidTextRepresentation as f:
             print("\nPlease enter the proper format.\n")
