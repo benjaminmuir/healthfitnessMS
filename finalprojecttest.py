@@ -207,10 +207,12 @@ def equipmentMaintenanceMenu():
         (1) View All Equipment
                         
         (2) Insert new equipment
+                                
+        (3) Delete an equipment
 
-        (3) Update Equipment Information
+        (4) Update Equipment Information
                         
-        (4) Exit Equipment menu
+        (5) Exit Equipment menu
         -------------------------------\n""")
             if adminChoice == "1":
                 cur.execute("SELECT * FROM equipment")
@@ -229,8 +231,30 @@ def equipmentMaintenanceMenu():
                     (name,False,time))
                 db.commit()
                 print(f"\nEquipment {name} has been added to the database!\n")
-                pass
+                
             elif adminChoice == "3":
+                while True:
+                    cur.execute("SELECT * FROM equipment")
+                    equips = cur.fetchall()
+                    for row in equips:
+                        print(f"EquipmentID: {row[0]}, Name: {row[1]}, Monitor Status: {row[2]}, Time before next update: {row[3]}")
+                    equipID = input("\nPlease enter the equipment ID you would like to delete:\n")
+                    cur.execute("SELECT * FROM equipment WHERE equipmentID = %s", (equipID,))
+                    check = cur.fetchone()
+                    if check is None:
+                        print("\nThere does not exist an equipment with that ID.\n")
+                        break
+                    else:
+                        cur.execute("DELETE FROM equipment WHERE equipmentID = %s",(equipID,))
+                        db.commit()
+                        print("\nEquipment deleted\n")
+                        con = input("\nWould you like to delete anymore? (1) Yes or (2) No\n")
+                        if con == "2":
+                            db.commit()
+                            break
+                        else:
+                            db.commit()
+            elif adminChoice == "4":
                 while True:
                     cur.execute("SELECT * FROM equipment")
                     equips = cur.fetchall()
@@ -261,7 +285,7 @@ def equipmentMaintenanceMenu():
                         else:
                             db.commit()
                     
-            elif adminChoice == "4":
+            elif adminChoice == "5":
                 print("\nExiting...\n")
                 break
         except ValueError:
@@ -270,8 +294,9 @@ def equipmentMaintenanceMenu():
             print("\nThis is in the wrong form.\n")
             db.rollback()
         except psycopg.errors.InvalidDatetimeFormat as e:
-            print("\nPlease ensure the date/time formate is correct\n")
+            print("\nPlease ensure the date/time format is correct\n")
             db.rollback()
+
 def createClass():
     while True:
         try:
@@ -364,7 +389,6 @@ def createClass():
                 cur.execute("INSERT INTO class (day, timeStart,timeEnd,classExercise,trainerID) VALUES (%s, %s, %s, %s, %s)",
                     (day, timeStart, timeEnd, classExercise, trainerID))
                 db.commit()
-
                 print(f"\nClass was created with {trainerName} as a host on {day} at {datetime.strptime(timeStart,'%H:%M:%S').time()}!\n")
                 break
         except ValueError:
@@ -736,7 +760,9 @@ def updateWeightGoal(memberID):
            
         except psycopg.IntegrityError as e:
             print("\nInvalid input, please enter a number above 0\n")
-            
+        except psycopg.errors.InvalidTextRepresentation as f:
+            print("\nPlease enter the proper format.\n")
+            db.rollback()
        
 
 def updateLapTimeGoal(memberID):
@@ -759,7 +785,9 @@ def updateLapTimeGoal(memberID):
             
         except psycopg.IntegrityError as e:
             print("\nInvalid input, please enter a number above 0\n")
-            
+        except psycopg.errors.InvalidTextRepresentation as f:
+            print("\nPlease enter the proper format.\n")
+            db.rollback()
         
 
 def updateBenchMaxGoal(memberID):
@@ -781,7 +809,9 @@ def updateBenchMaxGoal(memberID):
             
         except psycopg.IntegrityError as e:
             print("\nInvalid input, please enter a number above 0\n")
-            
+        except psycopg.errors.InvalidTextRepresentation as f:
+            print("\nPlease enter the proper format.\n")
+            db.rollback()
         
 
 def updateSquatGoal(memberID):
@@ -800,9 +830,11 @@ def updateSquatGoal(memberID):
         #makes sure to rollback the previous execute on error
         except ValueError:
             print("\nInvalid input, please enter a number.\n")
-            
         except psycopg.IntegrityError as e:
             print("\nInvalid input, please enter a number above 0\n")
+        except psycopg.errors.InvalidTextRepresentation as f:
+            print("\nPlease enter the proper format.\n")
+            db.rollback()
             
 
 def updatePersonalInfo(memberID, cols):
@@ -858,6 +890,18 @@ def updatePersonalInfo(memberID, cols):
             print("\nInvalid input, please enter a number.\n")
         except psycopg.IntegrityError as e:
             print("\nInvalid input, please enter a valid number\n")
+        except psycopg.errors.InvalidTextRepresentation as f:
+            print("\nPlease enter the proper format.\n")
+            db.rollback()
+        except psycopg.errors.InvalidDatetimeFormat as c:
+            print("\nPlease enter a proper time format.\n")
+            db.rollback()
+        except psycopg.errors.DataError as x:
+            print("\nMust be from 00:00:00 to 23:59:59.\n")
+            db.rollback()
+        except psycopg.errors.DateTimeFieldOverFlow as c:
+            print("\nPlease enter a real time from 00:00:00 to 23:59:59.\n")
+            db.rollback()
     
 def memberScheduleMenu(memberID):
     print("Welcome to your schedule!")
@@ -1001,10 +1045,16 @@ def memberSchedule(memberID, choice):
                 for row in cur:
                     print(f"Session ID: {row[0]}, Day: {row[3]}, StartTime: {row[4]}, End Time: {row[5]}")
                 sID = input("\nEnter the session ID that you want to cancel:\n")
-                cur.execute("DELETE FROM session WHERE SID = %s AND memberID = %s", (sID, memberID))
-                db.commit()
-                print(f"\nThe session has been cancelled. The trainer has been notified.\n")
-                break
+                cur.execute("SELECT * FROM session WHERE SID = %s AND memberID = %s",(sID,memberID))
+                check = cur.fetchone()
+                if check is None:
+                    print("\nThere does not exist a session with that ID\n")
+                    break
+                else:
+                    cur.execute("DELETE FROM session WHERE SID = %s AND memberID = %s", (sID, memberID))
+                    db.commit()
+                    print(f"\nThe session has been cancelled. The trainer has been notified.\n")
+                    break
 
             elif choice == "4":
                 cur.execute("""
@@ -1020,11 +1070,17 @@ def memberSchedule(memberID, choice):
 
                 cID = input("\nEnter the ID of the class you would like to join:\n")
 
-                cur.execute("SELECT * from memberClass WHERE cID = %s AND memberID = %s", 
+                cur.execute("SELECT * from memberClass WHERE CID = %s AND memberID = %s", 
                     (cID,memberID))
                 #check if availability does not line up
-                if cur.fetchone() is not None:
+                check = cur.fetchone()
+                if check is not None:
                     print("\nYou are already enrolled in this class \n")
+                    break
+                cur.execute("SELECT * FROM class WHERE CID = %s", (cID,))
+                twoCheck = cur.fetchone()
+                if twoCheck is None:
+                    print("\nClass does not exist. \n")
                     break
                 else:
                     cur.execute("INSERT INTO memberClass (CID, memberID) VALUES (%s, %s)", (cID, memberID))
@@ -1223,51 +1279,63 @@ def viewHealthStatistics(memberID):
     
     gender = input("\nAre you a female (1) or male (2)?\n")
     if gender == "1":
-        if weight < 70.1:
-            print(f"\nThe average weight in Canada for a female is 70.1kg You weigh {weight}kg. You are below average.")
-        elif weight > 70.1:
-            print(f"\nThe average weight in Canada for a female is 70.1kg. You weigh {weight}kg. You are above average.")
-        elif weight == 70.1:
-            print("\nYou are the average weight for a female in Canada.")
-
-        if height < 1.62:
-            print(f"The average height in Canada for a female is 1.77m. You are {height}m. You are short.")
-        elif height > 1.62:
-            print(f"The average height in Canada for a female is 1.77m. You are {height}m. You are tall.")
-        elif height == 1.62:
-            print(f"The average height in Canada for a female is 1.77m. You are {height}m. You are average.")
-
+        try:
+            if weight < 70.1:
+                print(f"\nThe average weight in Canada for a female is 70.1kg You weigh {weight}kg. You are below average.")
+            elif weight > 70.1:
+                print(f"\nThe average weight in Canada for a female is 70.1kg. You weigh {weight}kg. You are above average.")
+            elif weight == 70.1:
+                print("\nYou are the average weight for a female in Canada.")
+        except TypeError:
+            print("\nLooks like your weight was not set up, please see personal information in profile mangement to set it up!\n")
+        try:
+            if height < 1.62:
+                print(f"The average height in Canada for a female is 1.77m. You are {height}m. You are short.")
+            elif height > 1.62:
+                print(f"The average height in Canada for a female is 1.77m. You are {height}m. You are tall.")
+            elif height == 1.62:
+                print(f"The average height in Canada for a female is 1.77m. You are {height}m. You are average.")
+        except TypeError:
+            print("\nLooks like your height was not set up, please see personal information in profile mangement to set it up!\n")
     elif gender == "2":
-        if weight < 84.6:
-            print(f"\nThe average weight in Canada for a male is 84.6kg. You weigh {weight}kg. You are below average.")
-        elif weight > 84.6:
-            print(f"\nThe average weight in Canada for a male is 84.6kg. You weigh {weight}kg. You are above average.")
-        elif weight == 84.6:
-            print("\nYou are the average weight for a male in Canada.")
-        
-        if height < 1.77:
-            print(f"The average height in Canada for a male is 1.77m. You are {height}m. You are short.")
-        if height > 1.77:
-            print(f"The average height in Canada for a male is 1.77m. You are {height}m. You are tall.")
-        elif height == 1.77:
-            print(f"The average height in Canada for a male is 1.77m. You are {height}m. You are average.")
-        
-
-    if age < 40:
-        print(f"The average age in Ontario is 40. You are {age} and thus less than average!")
-    elif age > 40:
-        print(f"The average age in Ontario is 40. You are {age} and thus above average!")
-    elif age == 40:
-        print(f"The average age in Ontario is 40. You are 40 and thus average!")
-
-    if bmi <= 24.9 or bmi >= 18.5:
-        print(f"Your BMI is: {bmi}. Which is in a healthy range!\n")
-    elif bmi >= 25 or bmi <= 29.9:
-        print(f"Your BMI is: {bmi}. Which is in the overweight range!\n")
-    elif 30 <= bmi <= 39.9:
-        print(f"Your BMI is: {bmi}. Which is in the obesity range!\n")
-    elif bmi >= 40:
-        print(f"Your BMI is: {bmi}. Which is in the severe obesity range!\n")
+            try:
+                if weight < 84.6:
+                    print(f"\nThe average weight in Canada for a male is 84.6kg. You weigh {weight}kg. You are below average.")
+                elif weight > 84.6:
+                    print(f"\nThe average weight in Canada for a male is 84.6kg. You weigh {weight}kg. You are above average.")
+                elif weight == 84.6:
+                    print("\nYou are the average weight for a male in Canada.")
+            except TypeError:
+                print("\nLooks like your weight was not set up, please see personal information in profile mangement to set it up!\n")
+            try:
+                if height < 1.77:
+                    print(f"The average height in Canada for a male is 1.77m. You are {height}m. You are short.")
+                if height > 1.77:
+                    print(f"The average height in Canada for a male is 1.77m. You are {height}m. You are tall.")
+                elif height == 1.77:
+                    print(f"The average height in Canada for a male is 1.77m. You are {height}m. You are average.")
+            except TypeError:
+                print("\nLooks like your height was not set up, please see personal information in profile mangement to set it up!\n")
+    try:
+        if age < 40:
+            print(f"The average age in Ontario is 40. You are {age} and thus less than average!")
+        elif age > 40:
+            print(f"The average age in Ontario is 40. You are {age} and thus above average!")
+        elif age == 40:
+            print(f"The average age in Ontario is 40. You are 40 and thus average!")
+    except TypeError:
+        print("\nLooks like your age was not set up, please see personal information in profile mangement to set it up!\n")
+    try:
+        if bmi <= 24.9 or bmi >= 18.5:
+            print(f"Your BMI is: {bmi}. Which is in a healthy range!\n")
+        elif bmi >= 25 or bmi <= 29.9:
+            print(f"Your BMI is: {bmi}. Which is in the overweight range!\n")
+        elif 30 <= bmi <= 39.9:
+            print(f"Your BMI is: {bmi}. Which is in the obesity range!\n")
+        elif bmi >= 40:
+            print(f"Your BMI is: {bmi}. Which is in the severe obesity range!")
+    except TypeError:
+        print("\nLooks like your height, weight, or age was not set up, please see personal information in profile mangement to set it up!\n")
     
 
 def viewFitnessAchievements(memberID):
@@ -1275,12 +1343,14 @@ def viewFitnessAchievements(memberID):
     # from the relevant tables in the database.
     # try:
         
-        cur.execute("SELECT lapTime,weight,weightGoal,lapTimeGoal,squatMax,squatMaxGoal,benchMaxGoal,benchMax FROM member WHERE memberID = %s", (memberID,))
-        lapTime,weight,weightGoal, lapTimeGoal, squatMax, squatMaxGoal, benchMaxGoal, benchMax = cur.fetchone()
-        #get the time difference between the goal and current laptime
+    cur.execute("SELECT lapTime,weight,weightGoal,lapTimeGoal,squatMax,squatMaxGoal,benchMaxGoal,benchMax FROM member WHERE memberID = %s", (memberID,))
+    lapTime,weight,weightGoal, lapTimeGoal, squatMax, squatMaxGoal, benchMaxGoal, benchMax = cur.fetchone()
+    #get the time difference between the goal and current laptime
+    
+    #convert to a datetime from a EPOCH timestamp
+    try:
         cur.execute("SELECT EXTRACT (EPOCH FROM (lapTime - lapTimeGoal)) FROM member WHERE memberID = %s", (memberID,))
-        timeDifference = cur.fetchone()[0]
-        #convert to a datetime from a EPOCH timestamp
+        timeDifference = abs(cur.fetchone()[0])
         formattedTimeDiff = datetime.fromtimestamp(int(timeDifference))
         if(weight < weightGoal):
             print(f"Your current weight goal is {weightGoal}kg. You need to gain {weightGoal-weight}kgs to reach it!")
@@ -1288,28 +1358,36 @@ def viewFitnessAchievements(memberID):
             print(f"Your current weight goal is {weightGoal}kg. You need to lose {weight-weightGoal}kgs to reach it!")
         elif(weight == weightGoal):
             print(f"Your current weight goal of {weightGoal}kg is the same as your weight of {weight}kg! Great Job!")
-        
+    except TypeError:
+        print("Look like you have not set a value for either weight or a weight goal, please review your information if you wish to see this achievement")
+    try:
         if(lapTime <= lapTimeGoal):
             print(f"Your current lap time goal is {lapTimeGoal}. Your best you've ran is {lapTime}, congratulations!")
         elif(lapTime > lapTimeGoal):
             #print in formatted string
             print(f"Your current lap time goal is {lapTimeGoal}. You need to run {formattedTimeDiff.strftime('%M:%S')} faster to reach it!")
+    except TypeError:
+        print("Look like you have not set a value for either lap time or a lap time goal, please review your information if you wish to see this achievement")
 
+    try:
         if(squatMax < squatMaxGoal):
             print(f"Your current squat max goal is {squatMaxGoal}kg. The best you've lifted is {squatMax}kg, keep it up and get those {squatMaxGoal-squatMax}kgs up!")
         elif(squatMax > squatMaxGoal):
             print(f"Your current squat max goal is {squatMaxGoal}kg. The best you've lifted is {squatMax}kg, congratulations on beating your fitness goal!")
         elif squatMaxGoal == squatMax:
             print(f"Both your squat max goal: {squatMaxGoal}kg and your current best: {squatMax}kg are the same! Congratulations on reaching the goal, now lift that {squatMaxGoal-squatMax}kgs to achieve it!")
-        
+    except TypeError:
+        print("Look like you have not set a value for either squat max or a squat max goal, please review your information if you wish to see this achievement")
+
+    try:
         if(benchMax < benchMaxGoal):
             print(f"Your current bench max goal is {benchMaxGoal}kg. The best you've lifted is {benchMax}kg, keep it up and get those {benchMaxGoal-benchMax}kgs up!")
         elif(benchMax > benchMaxGoal):
             print(f"Your current bench max goal is {benchMaxGoal}kg. The best you've lifted is {benchMax}kg, congratulations on beating your fitness goal!")
         elif benchMaxGoal == benchMax:
             print(f"Both your bench max goal: {benchMaxGoal}kg and your current best: {benchMax}kg are the same! Congratulations on reaching the goal, now lift that {benchMaxGoal-benchMax}kgs to achieve it!")
-    # except TypeError:
-    #     print("Look like you have not set a value for either a goal or personal info, please review your information if you wish to see this achievement")
+    except TypeError:
+        print("Look like you have not set a value for either bench max or a bench max goal, please review your information if you wish to see this achievement")
 
 def viewExerciseRoutines(memberID):
     # This function will fetch and display the exercise routines of the member
@@ -1436,6 +1514,7 @@ def scheduleMenu(trainerID):
                 print("\nYour current available days are:\n")
                 for row in cur:
                     print(f"Day: {row[0]}, Start Time: {row[1]}, End Time: {row[2]}")
+                break
             elif choice == "4":
                 print("\nExiting Dashboard...")
                 break
