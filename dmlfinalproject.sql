@@ -5,11 +5,11 @@ INSERT INTO trainer (username, password, name) VALUES ('trainer3', 'password3', 
 
 -- Insert data into member
 INSERT INTO member (username, password, fName, lName, email, height, weight, age, weightGoal, lapTime, lapTimeGoal, benchMax, benchMaxGoal, squatMax, squatMaxGoal, restingHeartRate) 
-VALUES ('member1', 'password1', 'Member', 'One', 'member1@example.com', 1.70, 70, 30, 65, '00:01:39', '00:01:15', 250, 262, 150, 154, 45);
+VALUES ('member1', 'password1', 'Member', 'One', 'member1@example.com', 1.70, 70, 30, 65, '00:01:39', '00:01:15', 270, 262, 150, 154, 45);
 INSERT INTO member (username, password, fName, lName, email, height, weight, age, weightGoal, lapTime, lapTimeGoal, benchMax, benchMaxGoal, squatMax, squatMaxGoal, restingHeartRate) 
 VALUES ('member2', 'password2', 'Member', 'Two', 'member2@example.com', 1.63, 65, 35, 75, '00:05:43', '00:05:55', 110, 120, 160, 170, 75);
 INSERT INTO member (username, password, fName, lName, email, height, weight, age, weightGoal, lapTime, lapTimeGoal, benchMax, benchMaxGoal, squatMax, squatMaxGoal, restingHeartRate) 
-VALUES ('member3', 'password3', 'Member', 'Three', 'member3@example.com', 1.91, 90, 40, 85, '00:03:12', '00:01:32', 120, 130, 170, 180, 80);
+VALUES ('member3', 'password3', 'Member', 'Three', 'member3@example.com', 1.91, 90, 40, 85, '00:03:12', '00:01:32', 120, 130, 190, 180, 80);
 
 -- Insert data into exerciseRoutine
 INSERT INTO exerciseRoutine (name, memberID, repetitions) VALUES ('Push Ups', 1, 10);
